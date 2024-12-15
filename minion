@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import time
+import random
+
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: minion <sleep_time>")
+        sys.exit(1)
+
+    sleep_time = int(sys.argv[1])
+    pid = os.getpid()
+    ppid = os.getppid()
+
+    print(f"Minion[{pid}]: created. Parent PID {ppid}.")
+
+    time.sleep(sleep_time)
+
+    exit_status = random.choice([0, 1])
+    print(f"Child[{pid}]: before terminated. Parent PID {ppid}. Exit status {exit_status}.")
+
+    sys.exit(exit_status)
+
+
+if __name__ == "__main__":
+    main()

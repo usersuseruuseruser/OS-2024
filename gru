@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import random
+
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: gru <number_of_processes>")
+        sys.exit(1)
+
+    N = int(sys.argv[1])
+    if N <= 0:
+        print("Number of processes must be greater than 0.")
+        sys.exit(1)
+
+    processes = []
+
+    while N > 0:
+        pid = os.fork()
+        if pid == 0:
+            # Дочерний процесс
+            random_sleep_time = random.randint(5, 10)
+            os.execve("./minion", ["minion", str(random_sleep_time)], os.environ)
+        elif pid > 0:
+            print(f"Gru[{os.getpid()}]: process created. PID {pid}.")
+            processes.append(pid)
+            N -= 1
+        else:
+            print("Fork failed")
+            sys.exit(1)
+
+    # Ожидание завершения дочерних процессов
+    while processes:
+        child_pid, status = os.wait()
+        processes.remove(child_pid)
+        exit_status = os.WEXITSTATUS(status)
+        print(f"Gru[{os.getpid()}]: process terminated. PID {child_pid}. Exit status {exit_status}.")
+
+        if exit_status != 0:
+            # Создаем новый процесс взамен завершившегося с ошибкой
+            pid = os.fork()
+            if pid == 0:
+                random_sleep_time = random.randint(5, 10)
+                os.execve("./minion", ["minion", str(random_sleep_time)], os.environ)
+            elif pid > 0:
+                print(f"Gru[{os.getpid()}]: process created. PID {pid}.")
+                processes.append(pid)
+            else:
+                print("Fork failed")
+                sys.exit(1)
+
+    print(f"Gru[{os.getpid()}]: All processes terminated successfully.")
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
