@@ -47,7 +47,6 @@ def controller():
 
         os.execlp("bc", "bc") 
 
-    # Родительский процесс (Controller)
     os.close(pipe_a_write) 
     os.close(pipe_b_read)  
     os.close(pipe_c_write) 
