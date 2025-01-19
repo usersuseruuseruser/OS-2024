@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+import os
+import random
+import signal
+import time
+
+def controller():
+    processed_lines = 0
+
+    def handle_sigusr1(signum, frame):
+        os.write(2, f"Processed {processed_lines} lines\n".encode())
+
+    signal.signal(signal.SIGUSR1, handle_sigusr1)
+
+    pipe_a_read, pipe_a_write = os.pipe()
+    pipe_b_read, pipe_b_write = os.pipe()
+    pipe_c_read, pipe_c_write = os.pipe()
+
+    pid_generator = os.fork()
+
+    if pid_generator == 0: 
+        os.close(pipe_a_read)  
+        os.dup2(pipe_a_write, 1)
+        os.close(pipe_a_write)
+        os.close(pipe_b_read)
+        os.close(pipe_b_write)
+        os.close(pipe_c_read)
+        os.close(pipe_c_write)
+
+        N = random.randint(120, 180) 
+        os.execlp("./generator", "generator", str(N))
+
+
+    pid_bc = os.fork()
+
+    if pid_bc == 0:
+        os.close(pipe_b_write) 
+        os.dup2(pipe_b_read, 0) 
+        os.close(pipe_b_read)
+
+        os.close(pipe_c_read)  
+        os.dup2(pipe_c_write, 1)
+        os.close(pipe_c_write)
+
+        os.close(pipe_a_read)
+        os.close(pipe_a_write)
+
+        os.execlp("bc", "bc") 
+
+    # Родительский процесс (Controller)
+    os.close(pipe_a_write) 
+    os.close(pipe_b_read)  
+    os.close(pipe_c_write) 
+
+    try:
+        while True:
+            expression = os.read(pipe_a_read, 1024).decode().strip()
+            if not expression:
+                break 
+
+            os.write(pipe_b_write, (expression + "\n").encode())
+            # Чтение результата из Pipe C
+            result = os.read(pipe_c_read, 1024).decode().strip()
+
+            print(f"{expression} = {result}")
+            processed_lines += 1
+
+    except KeyboardInterrupt:
+        pass
+
+    finally:
+        os.close(pipe_a_read)
+        os.close(pipe_b_write)
+        os.close(pipe_c_read)
+        os.waitpid(pid_generator, 0)
+        os.waitpid(pid_bc, 0)
+        os._exit(0)
+
+if __name__ == "__main__":
+    controller()

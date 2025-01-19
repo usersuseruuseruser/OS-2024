@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+import os
+import random
+import time
+
+def generator(N):
+    if not (120 <= N <= 180):
+        os._exit(1)
+
+    operations = ['+', '-', '*', '/']
+    for _ in range(N):
+        x = random.randint(1, 9)
+        y = random.randint(1, 9)
+        operation = random.choice(operations)
+        expression = f"{x} {operation} {y}\n"
+        os.write(1, expression.encode())
+        time.sleep(1)
+
+    os._exit(0)
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        os._exit(1)
+    generator(int(sys.argv[1]))
