@@ -59,7 +59,6 @@ def controller():
                 break 
 
             os.write(pipe_b_write, (expression + "\n").encode())
-            # Чтение результата из Pipe C
             result = os.read(pipe_c_read, 1024).decode().strip()
 
             print(f"{expression} = {result}")
